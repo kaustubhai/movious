@@ -8,6 +8,8 @@ dotenv.config();
 server.use(cors());
 server.use(cp());
 server.use(express.json({ extended: false }));
+server.use("/api/admin", require("./router/admin"));
+server.use("/api/user", require("./router/user"));
 
 const PORT = (process.env.PORT = 5000);
 server.listen(PORT, console.log(`Server is live on ${PORT}`));
