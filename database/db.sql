@@ -24,12 +24,15 @@ CREATE TABLE person (
 
 CREATE TABLE show (
     _id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    name VARCHAR(150) NOT NULL,
     poster BYTEA NOT NULL,
     theater UUID REFERENCES theater(_id),
     screen INT NOT NULL,
     seats INT NOT NULL,
     cost FLOAT(2) NOT NULL,
     age INT NOT NULL,
+    booked INT [],
+    date TIMESTAMP NOT NULL,
     language VARCHAR(50) NOT NULL
 );
 

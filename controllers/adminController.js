@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const pool = require("../database/connect");
+const sharp = require("sharp");
 
 const register = async (req, res) => {
   try {
@@ -46,7 +47,7 @@ const register = async (req, res) => {
     res.cookie("token", token, { httpOnly: true });
     res.status(201).json({ ...result.rows[0], token });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(400).json({ error: error.message });
   }
 };
@@ -72,7 +73,7 @@ const login = async (req, res) => {
     res.cookie("token", token, { httpOnly: true });
     res.json({ ...rows[0], token });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(400).json({ error: error.message });
   }
 };
@@ -88,4 +89,138 @@ const getUser = async (req, res) => {
     res.status(400).json({ error: error.message });
   }
 };
-module.exports = { register, login, getUser };
+
+const theaterDetailsUpdate = async (req, res) => {
+  try {
+    const { name, email, contact, address } = req.body;
+    if (name)
+      await pool.query("UPDATE theater SET name = $1 WHERE _id = $2", [
+        name,
+        req.user,
+      ]);
+    if (email) {
+      const userByMail = await pool.query(
+        "SELECT name from theater WHERE email = $1",
+        [email]
+      );
+      if (userByMail.rows.length !== 0) throw Error("Email already in use");
+      await pool.query("UPDATE theater SET email = $1 WHERE _id = $2", [
+        email,
+        req.user,
+      ]);
+    }
+    if (contact) {
+      if (!contact.match(/^(\+91[\-\s]?)\d{10}$/))
+        throw Error("Invalid contact number");
+      const userByContact = await pool.query(
+        "SELECT name from theater WHERE contact = $1",
+        [contact]
+      );
+      if (userByContact.rows.length !== 0)
+        throw Error("Contact number already in use");
+      await pool.query("UPDATE theater SET contact = $1 WHERE _id = $2", [
+        contact,
+        req.user,
+      ]);
+    }
+    if (address) {
+      if (!address || address.length !== 3)
+        throw Error("Address need to have 3 lines atleast");
+      await pool.query("UPDATE theater SET address = $1 WHERE _id = $2", [
+        address,
+        req.user,
+      ]);
+    }
+    if (!name && !email && !contact && !address)
+      throw Error("Atleast one field is necessary");
+    const finalUser = await pool.query("SELECT * FROM theater WHERE _id = $1", [
+      req.user,
+    ]);
+    res.json(finalUser.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const addShow = async (req, res) => {
+  try {
+    const buffer = req.file.buffer;
+    const { screen, seats, cost, language, age, time, name } = req.body;
+    if (
+      !name ||
+      !screen ||
+      !seats ||
+      !cost ||
+      !buffer ||
+      !language ||
+      !age ||
+      !time
+    )
+      throw Error("All fields are mandatory");
+    const poster = await sharp(buffer).resize(500, 500).webp().toBuffer();
+    if (time < Date.now() / 1000) throw Error("Enter valid age");
+    const theater = req.user;
+    const result = await pool.query(
+      "INSERT INTO show (poster, theater, screen, date, seats, cost, language, age, name) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
+      [poster, theater, screen, time, seats, cost, language, age, name]
+    );
+    if (result.rowCount === 0) throw Error("Internal Server Error");
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+const editShow = async (req, res) => {
+  try {
+    const buffer = req.file?.buffer;
+    const { id } = req.params;
+    const { screen, seats, cost, language, age, time, name } = req.body;
+    if (buffer) {
+      const poster = await sharp(buffer).resize(500, 500).webp().toBuffer();
+      await pool.query("UPDATE show SET poster = $1 WHERE _id = $2", [
+        poster,
+        id,
+      ]);
+    }
+    if (name)
+      await pool.query("UPDATE show SET name = $1 WHERE _id = $2", [name, id]);
+    if (time)
+      await pool.query("UPDATE show SET date = $1 WHERE _id = $2", [time, id]);
+    if (age)
+      await pool.query("UPDATE show SET age = $1 WHERE _id = $2", [age, id]);
+    if (language)
+      await pool.query("UPDATE show SET language = $1 WHERE _id = $2", [
+        language,
+        id,
+      ]);
+    if (cost)
+      await pool.query("UPDATE show SET cost = $1 WHERE _id = $2", [cost, id]);
+    if (seats)
+      await pool.query("UPDATE show SET seats = $1 WHERE _id = $2", [
+        seats,
+        id,
+      ]);
+    if (screen)
+      await pool.query("UPDATE show SET screen = $1 WHERE _id = $2", [
+        screen,
+        id,
+      ]);
+    const result = await pool.query("SELECT * FROM show where _id = $1", [id]);
+    res.json(result.rows[0]);
+  } catch (error) {
+    console.error(error);
+    res.status(400).json({ error: error.message });
+  }
+};
+
+module.exports = {
+  register,
+  login,
+  getUser,
+  theaterDetailsUpdate,
+  addShow,
+  editShow,
+};

@@ -45,7 +45,7 @@ const register = async (req, res) => {
     res.cookie("token", token, { httpOnly: true });
     res.status(201).json({ ...result.rows[0], token });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(400).json({ error: error.message });
   }
 };
@@ -70,7 +70,7 @@ const login = async (req, res) => {
     res.cookie("token", token, { httpOnly: true });
     res.json({ ...rows[0], token });
   } catch (error) {
-    console.log(error);
+    console.error(error);
     res.status(400).json({ error: error.message });
   }
 };
