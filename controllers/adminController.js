@@ -36,7 +36,7 @@ const register = async (req, res) => {
       (add) => add.charAt(0).toUpperCase() + add.slice(1)
     );
     const result = await pool.query(
-      "INSERT INTO theater (name, admin, contact, email, address, password) VALUES($1, $2, $3, $4, $5, $6) RETURNING *",
+      "INSERT INTO theater (name, admin, contact, email, address, password) VALUES($1, $2, $3, $4, $5, $6) RETURNING _id, name, admin, contact, email, address",
       [name, admin, contact, email, addressFixed, hashed]
     );
     if (result.rows.length === 0) throw Error("Internal Server Error");
@@ -60,7 +60,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) throw Error("All the fields are mandatory");
     const { rows } = await pool.query(
-      "SELECT * FROM theater WHERE email = $1",
+      "SELECT _id, name, admin, contact, email, address FROM theater WHERE email = $1",
       [email]
     );
     if (rows.length === 0) throw Error("Email not registered");
@@ -83,7 +83,7 @@ const login = async (req, res) => {
 
 const getUser = async (req, res) => {
   try {
-    const { rows } = await pool.query("SELECT * FROM theater WHERE _id = $1", [
+    const { rows } = await pool.query("SELECT _id, name, admin, contact, email, address, password FROM theater WHERE _id = $1", [
       req.user,
     ]);
     res.json(rows[0]);
@@ -139,7 +139,7 @@ const theaterDetailsUpdate = async (req, res) => {
     }
     if (!name && !email && !contact && !address)
       throw Error("Atleast one field is necessary");
-    const finalUser = await pool.query("SELECT * FROM theater WHERE _id = $1", [
+    const finalUser = await pool.query("SELECT _id, name, admin, contact, email, address, password FROM theater WHERE _id = $1", [
       req.user,
     ]);
     res.json(finalUser.rows[0]);

@@ -19,7 +19,8 @@ CREATE TABLE person (
     email VARCHAR(150) UNIQUE NOT NULL,
     contact VARCHAR(50) UNIQUE NOT NULL,
     city VARCHAR(150) NOT NULL,
-    password VARCHAR(100) NOT NULL
+    password VARCHAR(100) NOT NULL,
+    booked UUID [] 
 );
 
 CREATE TABLE show (
@@ -27,8 +28,8 @@ CREATE TABLE show (
     name VARCHAR(150) NOT NULL,
     poster BYTEA NOT NULL,
     theater UUID REFERENCES theater(_id),
-    screen INT[] NOT NULL,
-    seats INT NOT NULL,
+    screen INT NOT NULL,
+    seats INT [] NOT NULL,
     cost FLOAT(2) NOT NULL,
     duration INT NOT NULL,
     age INT NOT NULL,
@@ -42,5 +43,5 @@ CREATE TABLE booking (
     show UUID REFERENCES show(_id),
     person UUID REFERENCES person(_id),
     transaction FLOAT(2) NOT NULL,
-    seats VARCHAR(3) [] NOT NULL
+    seats INT [] NOT NULL
 );
