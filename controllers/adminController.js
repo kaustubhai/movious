@@ -32,9 +32,12 @@ const register = async (req, res) => {
     if (userByContact.rows.length !== 0)
       throw Error("Contact number already in use");
     const hashed = await bcrypt.hash(password, 8);
+    const addressFixed = address.map(
+      (add) => add.charAt(0).toUpperCase() + add.slice(1)
+    );
     const result = await pool.query(
       "INSERT INTO theater (name, admin, contact, email, address, password) VALUES($1, $2, $3, $4, $5, $6) RETURNING *",
-      [name, admin, contact, email, address, hashed]
+      [name, admin, contact, email, addressFixed, hashed]
     );
     if (result.rows.length === 0) throw Error("Internal Server Error");
     const token = jwt.sign(
@@ -126,8 +129,11 @@ const theaterDetailsUpdate = async (req, res) => {
     if (address) {
       if (!address || address.length !== 3)
         throw Error("Address need to have 3 lines atleast");
+      const addressFixed = address.map(
+        (add) => add.charAt(0).toUpperCase() + add.slice(1)
+      );
       await pool.query("UPDATE theater SET address = $1 WHERE _id = $2", [
-        address,
+        addressFixed,
         req.user,
       ]);
     }
@@ -146,7 +152,7 @@ const theaterDetailsUpdate = async (req, res) => {
 const addShow = async (req, res) => {
   try {
     const buffer = req.file.buffer;
-    const { screen, seats, cost, language, age, time, name } = req.body;
+    const { screen, seats, cost, language, age, time, name, duration } = req.body;
     if (
       !name ||
       !screen ||
@@ -155,15 +161,29 @@ const addShow = async (req, res) => {
       !buffer ||
       !language ||
       !age ||
+      !duration ||
       !time
     )
       throw Error("All fields are mandatory");
     const poster = await sharp(buffer).resize(500, 500).webp().toBuffer();
     if (time < Date.now() / 1000) throw Error("Enter valid age");
+    if (JSON.parse(seats).length !== 2) throw Error("Enter seats in correct format");
+    if (`${duration.trim().split('.')[0]}`.length !== 4) throw Error("Enter duration in correct format");
     const theater = req.user;
     const result = await pool.query(
-      "INSERT INTO show (poster, theater, screen, date, seats, cost, language, age, name) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *",
-      [poster, theater, screen, time, seats, cost, language, age, name]
+      "INSERT INTO show (poster, theater, screen, date, seats, cost, duration, language, age, name) VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10) RETURNING *",
+      [
+        poster,
+        theater,
+        screen,
+        time,
+        JSON.parse(seats),
+        cost,
+        duration,
+        language.toLowerCase(),
+        age,
+        name,
+      ]
     );
     if (result.rowCount === 0) throw Error("Internal Server Error");
     res.json(result.rows[0]);
@@ -193,7 +213,7 @@ const editShow = async (req, res) => {
       await pool.query("UPDATE show SET age = $1 WHERE _id = $2", [age, id]);
     if (language)
       await pool.query("UPDATE show SET language = $1 WHERE _id = $2", [
-        language,
+        language.toLowerCase(),
         id,
       ]);
     if (cost)

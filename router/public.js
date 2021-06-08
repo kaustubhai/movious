@@ -1,11 +1,8 @@
 const express = require("express");
-const {
-  getTheaters,
-  getLocationTheaters,
-} = require("../controllers/publicController");
+const { getTheaters, getShows } = require("../controllers/publicController");
 const router = express.Router();
 
-router.get("/", getTheaters);
-router.get("/:location", getLocationTheaters);
+router.get("/shows", getShows);
+router.get("/theaters", getTheaters);
 
 module.exports = router;

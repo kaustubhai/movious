@@ -87,4 +87,23 @@ const getUser = async (req, res) => {
   }
 };
 
-module.exports = { register, login, getUser };
+const getLocationTheaters = async (req, res) => {
+  try {
+    const user = await pool.query("SELECT city FROM person WHERE _id = $1", [
+      req.user,
+    ]);
+    let city = user.rows[0].city;
+    city = city.charAt(0).toUpperCase() + city.slice(1);
+    const result = await pool.query(
+      "SELECT * FROM theater WHERE address[3] ILIKE $1",
+      [city]
+    );
+    if (result.rowCount === 0) throw Error("No Theater at your location");
+    else res.json(result.rows);
+  } catch (error) {
+    res.status(400).json({ error: error.message });
+    console.error(error);
+  }
+};
+
+module.exports = { register, login, getUser, getLocationTheaters };
