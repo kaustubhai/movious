@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const pool = require("../database/connect");
+const stripe = require("stripe")(process.env.STRIPE_SECRET_TEST);
 
 const register = async (req, res) => {
   try {
@@ -54,10 +55,11 @@ const login = async (req, res) => {
   try {
     const { email, password } = req.body;
     if (!email || !password) throw Error("All the fields are mandatory");
-    const { rows } = await pool.query("SELECT _id, name, age, email, contact, city FROM person WHERE email = $1", [
+    const { rows } = await pool.query("SELECT * FROM person WHERE email = $1", [
       email,
     ]);
     if (rows.length === 0) throw Error("Email not registered");
+    console.log(rows[0])
     const passMatch = await bcrypt.compare(password, rows[0].password);
     if (!passMatch) throw Error("Password Mismatched");
     const token = jwt.sign(
@@ -77,7 +79,7 @@ const login = async (req, res) => {
 
 const getUser = async (req, res) => {
   try {
-    const { rows } = await pool.query("SELECT _id, name, age, email, contact, city FROM person WHERE _id = $1", [
+    const { rows } = await pool.query("SELECT _id, name, booked, age, email, contact, city FROM person WHERE _id = $1", [
       req.user,
     ]);
     res.json(rows[0]);
@@ -158,7 +160,6 @@ const bookShow = async (req, res) => {
 const getBooking = async (req, res) => {
   try {
     const { id } = req.params
-    console.log(id)
     const booking = await pool.query("SELECT email FROM booking LEFT JOIN person ON person._id = booking.person WHERE booking._id = $1", [id])
     const user = await pool.query("SELECT * FROM person WHERE _id = $1", [req.user])
     if(user.rows[0].email !== booking.rows[0].email)
@@ -172,4 +173,43 @@ const getBooking = async (req, res) => {
   }
 }
 
-module.exports = { register, login, getUser, getLocationTheaters, bookShow, getBooking };
+const payment = async (req, res) => {
+  const { id, token } = req.params;
+  const booking = await pool.query("SELECT * FROM booking LEFT JOIN show ON show._id = booking.show WHERE booking._id = $1", [id])
+  const user = await pool.query("SELECT name, email, contact FROM person WHERE _ID = $1", [req.user])
+  if(booking.rows === 0)
+    throw Error()
+  // if(booking.rows[0].payment)
+  //   throw Error()
+  console.log({email: user.rows[0].email.toString().trim()})
+  try {
+    const payment = await stripe.paymentIntents.create({
+      amount: booking.rows[0].transaction,
+      currency: "INR",
+      description: `${booking.rows[0].seats.length} tickets for ${booking.rows[0].name}`,
+      payment_method_data: {
+        type: 'card',
+        card: {
+          token
+        }
+      },
+      confirm: true,
+    });
+    await pool.query("UPDATE booking SET payment = $1 WHERE _id = $2", [true, id])
+    res.json({
+      message: "Payment Successful",
+      success: true,
+      payment
+    });
+  } catch (error) {
+    console.log("stripe-routes.js 17 | error", error);
+    res.json({
+      message: "Something went wrong",
+      error,
+      success: false,
+    });
+  }
+};
+
+
+module.exports = { register, login, getUser, getLocationTheaters, bookShow, getBooking, payment };

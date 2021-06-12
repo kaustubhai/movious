@@ -6,6 +6,7 @@ const {
   getLocationTheaters,
   bookShow,
   getBooking,
+  payment,
 } = require("../controllers/userController");
 const router = express.Router();
 const auth = require("../middleware/userAuth");
@@ -16,5 +17,6 @@ router.get("/get", auth, getUser);
 router.get("/theaters", auth, getLocationTheaters);
 router.post("/book/:show", auth, bookShow);
 router.get("/ticket/:id", auth, getBooking);
+router.post("/payment/:token/:id", auth, payment);
 
 module.exports = router;

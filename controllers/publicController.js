@@ -15,7 +15,7 @@ const getShow = async (req, res) => {
   try {
     const { id } = req.params
     const result = await pool.query("SELECT * FROM show WHERE _id = $1", [id]);
-    if (result.rowCount === 0) throw Error("No show fonded");
+    if (result.rowCount === 0) throw Error("No show founded");
     res.json(result.rows);
   } catch (error) {
     res.status(400).json({ error: error.message });
