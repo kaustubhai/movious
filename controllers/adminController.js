@@ -60,7 +60,7 @@ const login = async (req, res) => {
     const { email, password } = req.body;
     if (!email || !password) throw Error("All the fields are mandatory");
     const { rows } = await pool.query(
-      "SELECT _id, name, admin, contact, email, address FROM theater WHERE email = $1",
+      "SELECT _id, name, admin, contact, email, address, password FROM theater WHERE email = $1",
       [email]
     );
     if (rows.length === 0) throw Error("Email not registered");

@@ -60,7 +60,6 @@ const login = async (req, res) => {
       email,
     ]);
     if (rows.length === 0) throw Error("Email not registered");
-    console.log(rows[0])
     const passMatch = await bcrypt.compare(password, rows[0].password);
     if (!passMatch) throw Error("Password Mismatched");
     const token = jwt.sign(
@@ -127,7 +126,7 @@ const bookShow = async (req, res) => {
       if(seat + 1 > rows[0].seats[0] * rows[0].seats[1])
         throw Error("Please select proper seats")
       if(rows[0].booked && rows[0].booked.indexOf(seat) !== -1)
-        throw Error("THese seats are already booked")
+        throw Error("These seats are already booked")
     })
     let seatUpdate
     if(rows[0].booked)
@@ -138,7 +137,6 @@ const bookShow = async (req, res) => {
       seatUpdate, show
     ])
     const transaction = rows[0].cost * seats.length
-    console.log(seats)
     const book = await pool.query("INSERT INTO booking(person, show, transaction, seats) VALUES($1, $2, $3, $4) RETURNING *", [
       req.user, show, transaction, seats
     ])
@@ -152,11 +150,11 @@ const bookShow = async (req, res) => {
       bookedShow, req.user
     ])
     res.json(book.rows[0])
-
+    const theater = await pool.query("SELECT * FROM theater WHERE _id =  $1", [rows[0].theater])
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: 'kaustubh@gmail.com',
+        user: 'atlancey.kaustubh@gmail.com',
         pass: 'kaustubh229'
       }
     })
@@ -164,14 +162,15 @@ const bookShow = async (req, res) => {
     transporter.sendMail({
       from: 'Movious(kaustubh@atlancey.com)',
       to: 'kaustubh229@gmail.com',
+      subject: `Your movie ticket for ${rows[0].name}`,
       text: 'test-mail',
-      html: '<h1>Hello Worldd</h1>'
-    }).then(() => console.log("Mail sent"))
+      html: `<div style="margin: auto; text-align: center; max-width: 640px; background-color: rgba(0,0,0,0.05); padding: 25px"><h1 style="font-family: Poppins; font-weight: 500; font-size: x-large; color: blueviolet;">Your movie Ticket is here</h1><ul style="list-style: none; padding-left: 0;"><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Seats:</strong> ${seats.toString()}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Movie:</strong> ${rows[0].name}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Theater:</strong> ${theater.rows[0].name}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Screen:</strong> Number ${rows[0].screen}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Contact:</strong> ${theater.rows[0].contact}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Language:</strong> ${rows[0].language}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Date:</strong> ${rows[0].date.toDateString()}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Time:</strong> ${rows[0].date.getHours()}:${rows[0].date.getMinutes()}</li></ul><code style="margin-bottom: 25px">Booked using Movious</code><img height="250px" width="100%" style="object-fit: cover;" src="https://images.pexels.com/photos/3692639/pexels-photo-3692639.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Image poster" /></div>`,
+    }).then(() => console.log(`Mail sent to ${user.rows[0].email}`))
     .catch((e) => console.log("Mail not sent", e))
 
   } catch (error) {
     res.status(400).json({ error: error.message });
-    console.error(error);
+    console.error(error); 
   }
 }
 
@@ -199,7 +198,6 @@ const payment = async (req, res) => {
     throw Error()
   // if(booking.rows[0].payment)
   //   throw Error()
-  console.log({email: user.rows[0].email.toString().trim()})
   try {
     const payment = await stripe.paymentIntents.create({
       amount: booking.rows[0].transaction,
