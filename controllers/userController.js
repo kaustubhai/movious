@@ -1,6 +1,7 @@
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcrypt");
 const pool = require("../database/connect");
+const nodemailer = require("nodemailer");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_TEST);
 
 const register = async (req, res) => {
@@ -151,6 +152,23 @@ const bookShow = async (req, res) => {
       bookedShow, req.user
     ])
     res.json(book.rows[0])
+
+    const transporter = nodemailer.createTransport({
+      service: 'gmail',
+      auth: {
+        user: 'kaustubh@gmail.com',
+        pass: 'kaustubh229'
+      }
+    })
+
+    transporter.sendMail({
+      from: 'Movious(kaustubh@atlancey.com)',
+      to: 'kaustubh229@gmail.com',
+      text: 'test-mail',
+      html: '<h1>Hello Worldd</h1>'
+    }).then(() => console.log("Mail sent"))
+    .catch((e) => console.log("Mail not sent", e))
+
   } catch (error) {
     res.status(400).json({ error: error.message });
     console.error(error);

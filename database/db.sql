@@ -44,5 +44,5 @@ CREATE TABLE booking (
     person UUID REFERENCES person(_id),
     transaction FLOAT(2) NOT NULL,
     seats INT [] NOT NULL,
-    payment BOOL DEFAULT false;
+    payment BOOL DEFAULT false
 );
