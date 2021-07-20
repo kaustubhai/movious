@@ -1,4 +1,4 @@
-CREATE DATABASE muvious;
+CREATE DATABASE movious;
 
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 

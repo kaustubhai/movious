@@ -154,14 +154,14 @@ const bookShow = async (req, res) => {
     const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
-        user: 'atlancey.kaustubh@gmail.com',
-        pass: 'kaustubh229'
+        user: process.env.MAIL_ID,
+        pass: process.env.MAIL_PASS
       }
     })
 
     transporter.sendMail({
       from: 'Movious(kaustubh@atlancey.com)',
-      to: 'kaustubh229@gmail.com',
+      to: user.rows[0].email,
       subject: `Your movie ticket for ${rows[0].name}`,
       text: 'test-mail',
       html: `<div style="margin: auto; text-align: center; max-width: 640px; background-color: rgba(0,0,0,0.05); padding: 25px"><h1 style="font-family: Poppins; font-weight: 500; font-size: x-large; color: blueviolet;">Your movie Ticket is here</h1><ul style="list-style: none; padding-left: 0;"><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Seats:</strong> ${seats.toString()}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Movie:</strong> ${rows[0].name}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Theater:</strong> ${theater.rows[0].name}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Screen:</strong> Number ${rows[0].screen}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Contact:</strong> ${theater.rows[0].contact}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Language:</strong> ${rows[0].language}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Date:</strong> ${rows[0].date.toDateString()}</li><li style="padding: 5px 0; font-family: Poppins; font-weight: lighter;"><strong style="color: red;">Time:</strong> ${rows[0].date.getHours()}:${rows[0].date.getMinutes()}</li></ul><code style="margin-bottom: 25px">Booked using Movious</code><img height="250px" width="100%" style="object-fit: cover;" src="https://images.pexels.com/photos/3692639/pexels-photo-3692639.jpeg?auto=compress&cs=tinysrgb&dpr=2&h=650&w=940" alt="Image poster" /></div>`,
