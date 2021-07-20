@@ -10,6 +10,19 @@
 - Real Payment integration with Stripe
 - Booking confirmation email with ticket
 
+## Setting up locally
+Run following command in your terminal
+```bash
+    git clone https://github.com/kaustubhai/movious.git
+    cd movious
+    npm install
+```
+Setup the required variable in .env.local file and run
+```bash
+    npm run dev
+```
+This will start backend server on http://localhost:5000 using nodemon
+
 ## Tech Stack Used:
 - Node
 - Express
